@@ -1,4 +1,5 @@
 venv
+.venv
 invoices
 *.env
 .DS_Store
