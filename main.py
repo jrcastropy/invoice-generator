@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 
 load_dotenv()
 
-
 INVOICE_GENERATOR_API_KEY = os.getenv("INVOICE_GENERATOR_API_KEY")
 INVOICE_GENERATOR_URL = os.getenv("INVOICE_GENERATOR_URL", "https://invoice-generator.com")
 FULL_NAME = os.getenv("FULL_NAME")
@@ -80,16 +79,18 @@ if __name__ == "__main__":
     ## todo: Add parser for command line arguments
     import argparse
     parser = argparse.ArgumentParser(description="Generate an invoice.")
-    parser.add_argument("--hours", type=int, default=40, help="Number of hours worked (default: 40)")
+    parser.add_argument("--hours", type=int, default=60, help="Number of hours worked (default: 40)")
 
     args = parser.parse_args()
     os.makedirs(INVOICE_MAIN_PATH, exist_ok=True)
     hours = args.hours  # Example: 40 hours worked
     
     # Get the next invoice number based on existing files
-    invoices = os.listdir(INVOICE_MAIN_PATH)
+    invoices = [inv for inv in os.listdir(INVOICE_MAIN_PATH) if inv.endswith('.pdf')]
+    print(f"Existing invoices: {invoices}")
     number = len(invoices) + 1 if invoices else 1
     fn = f"{INVOICE_MAIN_PATH}/invoice-{number}.pdf"
+    print(f"Creating {fn}")
     # Ensure the filename is unique
     while os.path.exists(fn):
         print(f"Invoice number {number} already exists, incrementing...")
