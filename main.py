@@ -1,4 +1,4 @@
-import requests, os
+import requests, os, json
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 
@@ -31,7 +31,7 @@ def get_date_range_string(today):
     
     if today.day <= 15:
         start_day = 1
-        end_day = today.day
+        end_day = 15
     else:
         start_day = 16
         # Handle months with varying lengths
@@ -48,10 +48,7 @@ def get_date_range_string(today):
     return f"{month_name} {start_str} - {month_name} {end_str}, {year}"
 
 
-def main(number, date, fn, hours=40):
-
-    formatted_date_today = date.strftime("%b %d, %Y")
-    formatted_date_range = get_date_range_string(date)
+def main(number, start_day, date_range, fn, hours=80):
 
     headers = {
         "Authorization": f"Bearer {INVOICE_GENERATOR_API_KEY}"
@@ -62,13 +59,13 @@ def main(number, date, fn, hours=40):
         "to": f"{COMPANY_NAME}\n{COMPANY_ADDRESS}",
         "logo": LOGO_URL,  # Optional: Add your logo URL here
         "number": number,
-        "date": formatted_date_today,
-        "items[0][name]": formatted_date_range,
+        "date": start_day,
+        "items[0][name]": date_range,
         "items[0][quantity]": hours,
         "items[0][unit_cost]": HOURLY_RATE,
         "notes": f'''Please make Payment to:\n\n{FULL_NAME}\n{BANK_DETAILS}''',
     }
-
+    print(json.dumps(data, indent=2, ensure_ascii=False))
     response = requests.post(INVOICE_GENERATOR_URL, headers=headers, data=data)
 
     # Save the PDF file
@@ -79,12 +76,24 @@ if __name__ == "__main__":
     ## todo: Add parser for command line arguments
     import argparse
     parser = argparse.ArgumentParser(description="Generate an invoice.")
-    parser.add_argument("--hours", type=int, default=60, help="Number of hours worked (default: 40)")
+    parser.add_argument("--hours", type=int, default=80, help="Number of hours worked (default: 80)")
+    parser.add_argument("--start_day", type=str, default=None, help="The start day of the billing period in 'YYYY-MM-DD' format, example: 2025-06-06")
 
     args = parser.parse_args()
     os.makedirs(INVOICE_MAIN_PATH, exist_ok=True)
     hours = args.hours  # Example: 40 hours worked
-    
+    start_day = args.start_day
+    if start_day:        
+        start_date = datetime.strptime(start_day, "%Y-%m-%d")
+        # Convert the start_day string to "%B %d, %Y" format
+        start_day = start_date.strftime("%B %d, %Y")
+    else:
+        # date today in YYYY-MM-DD format
+        start_date = datetime.today()
+        start_day = start_date.strftime("%B %d, %Y")
+
+    date_range = get_date_range_string(start_date)
+
     # Get the next invoice number based on existing files
     invoices = [inv for inv in os.listdir(INVOICE_MAIN_PATH) if inv.endswith('.pdf')]
     print(f"Existing invoices: {invoices}")
@@ -98,6 +107,4 @@ if __name__ == "__main__":
         fn = f"{INVOICE_MAIN_PATH}/invoice-{number}.pdf"
     print(f"Generating invoice number: {number} at {fn}")
 
-    date_today = datetime.today()
-
-    main(number, date_today, fn, hours=hours)  # Example: 40 hours worked
+    main(number, start_day, date_range, fn, hours=hours)  # Example: 40 hours worked
