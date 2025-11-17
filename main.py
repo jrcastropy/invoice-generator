@@ -53,13 +53,15 @@ def main(number, start_day, date_range, fn, hours=80):
     headers = {
         "Authorization": f"Bearer {INVOICE_GENERATOR_API_KEY}"
     }
+    # Get date today in this format November 1, 2025 format
+    today_str = datetime.today().strftime("%B %d, %Y")
 
     data = {
         "from": f"{FULL_NAME}\n{ADDRESS}",
         "to": f"{COMPANY_NAME}\n{COMPANY_ADDRESS}",
         "logo": LOGO_URL,  # Optional: Add your logo URL here
         "number": number,
-        "date": start_day,
+        "date": today_str,
         "items[0][name]": date_range,
         "items[0][quantity]": hours,
         "items[0][unit_cost]": HOURLY_RATE,
